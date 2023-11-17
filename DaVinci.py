@@ -47,7 +47,7 @@ prompt = ["How may I assist you?",
     "What would you like me to do?"]
 
 chat_log=[
-    {"role": "system", "content": "Your name is DaVinci. You are a helpful assistant."},
+    {"role": "system", "content": "あなたの名前はjarvisです。 あなたは役に立つAIアシスタントです。"},
     ]
 
 def ChatGPT(query):
@@ -82,7 +82,7 @@ def append_clear_countdown():
     global chat_log
     chat_log.clear()
     chat_log=[
-        {"role": "system", "content": "Your name is DaVinci. You are a helpful assistant."},
+        {"role": "system", "content": "あなたの名前はjarvisです。 あなたは役に立つAIアシスタントです。"},
         ]    
     global count
     count = 0
