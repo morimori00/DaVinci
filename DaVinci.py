@@ -51,6 +51,9 @@ chat_log=[
     ]
 
 def ChatGPT(query):
+    if not query.strip() or len(query) <= 7:
+        return "メッセージが短すぎます。もう少し具体的な質問をしてください。"
+    
     user_query=[
         {"role": "user", "content": query},
         ]
