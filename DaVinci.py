@@ -14,8 +14,6 @@ import textwrap
 import threading
 import time
 
-import RPi.GPIO as GPIO
-
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame
@@ -26,17 +24,6 @@ from pvrecorder import PvRecorder
 from threading import Thread, Event
 from time import sleep
 
-GPIO.setwarnings(False)
-
-GPIO.setmode(GPIO.BCM)
-led1_pin=18
-led2_pin=23
-
-GPIO.setup(led1_pin, GPIO.OUT)
-GPIO.output(led1_pin, GPIO.LOW)
-
-GPIO.setup(led2_pin, GPIO.OUT)
-GPIO.output(led2_pin, GPIO.LOW)
 
 audio_stream = None
 cobra = None
@@ -121,26 +108,6 @@ def voice(chat):
         pass
     sleep(0.2)
 
-def fade_leds(event):
-    pwm1 = GPIO.PWM(led1_pin, 200)
-    pwm2 = GPIO.PWM(led2_pin, 200)
-
-    event.clear()
-
-    while not event.is_set():
-        pwm1.start(0)
-        pwm2.start(0)
-        for dc in range(0, 101, 5):
-            pwm1.ChangeDutyCycle(dc)  
-            pwm2.ChangeDutyCycle(dc)
-            time.sleep(0.05)
-        time.sleep(0.75)
-        for dc in range(100, -1, -5):
-            pwm1.ChangeDutyCycle(dc)                
-            pwm2.ChangeDutyCycle(dc)
-            time.sleep(0.05)
-        time.sleep(0.75)
-        
 def wake_word():
 
     porcupine = pvporcupine.create(keywords=["computer", "jarvis", "DaVinci",],
@@ -171,9 +138,6 @@ def wake_word():
         porcupine_keyword_index = porcupine.process(porcupine_pcm)
 
         if porcupine_keyword_index >= 0:
-
-            GPIO.output(led1_pin, GPIO.HIGH)
-            GPIO.output(led2_pin, GPIO.HIGH)
 
             print(Fore.GREEN + "\nWake word detected\n")
             porcupine_audio_stream.stop_stream
@@ -234,8 +198,6 @@ def detect_silence():
             silence_duration = time.time() - last_voice_time
             if silence_duration > 1.3:
                 print("End of query detected\n")
-                GPIO.output(led1_pin, GPIO.LOW)
-                GPIO.output(led2_pin, GPIO.LOW)
                 cobra_audio_stream.stop_stream                
                 cobra_audio_stream.close()
                 cobra.delete()
@@ -300,8 +262,6 @@ try:
             listen()
             detect_silence()
             transcript, words = o.process(recorder.stop())
-            t_fade = threading.Thread(target=fade_leds, args=(event,))
-            t_fade.start()
             recorder.stop()
             print(transcript)
 #            voice(transcript) # uncomment to have DaVinci repeat what it heard
@@ -313,9 +273,7 @@ try:
             t2.start()
             t1.join()
             t2.join()
-            event.set()
-            GPIO.output(led1_pin, GPIO.LOW)
-            GPIO.output(led2_pin, GPIO.LOW)        
+            event.set()       
             recorder.stop()
             o.delete
             recorder = None
@@ -323,9 +281,7 @@ try:
         except openai.error.APIError as e:
             print("\nThere was an API error.  Please try again in a few minutes.")
             voice("\nThere was an A P I error.  Please try again in a few minutes.")
-            event.set()
-            GPIO.output(led1_pin, GPIO.LOW)
-            GPIO.output(led2_pin, GPIO.LOW)        
+            event.set()     
             recorder.stop()
             o.delete
             recorder = None
@@ -334,9 +290,7 @@ try:
         except openai.error.Timeout as e:
             print("\nYour request timed out.  Please try again in a few minutes.")
             voice("\nYour request timed out.  Please try again in a few minutes.")
-            event.set()
-            GPIO.output(led1_pin, GPIO.LOW)
-            GPIO.output(led2_pin, GPIO.LOW)        
+            event.set()     
             recorder.stop()
             o.delete
             recorder = None
@@ -345,9 +299,7 @@ try:
         except openai.error.RateLimitError as e:
             print("\nYou have hit your assigned rate limit.")
             voice("\nYou have hit your assigned rate limit.")
-            event.set()
-            GPIO.output(led1_pin, GPIO.LOW)
-            GPIO.output(led2_pin, GPIO.LOW)        
+            event.set()     
             recorder.stop()
             o.delete
             recorder = None
@@ -356,9 +308,7 @@ try:
         except openai.error.APIConnectionError as e:
             print("\nI am having trouble connecting to the API.  Please check your network connection and then try again.")
             voice("\nI am having trouble connecting to the A P I.  Please check your network connection and try again.")
-            event.set()
-            GPIO.output(led1_pin, GPIO.LOW)
-            GPIO.output(led2_pin, GPIO.LOW)        
+            event.set()     
             recorder.stop()
             o.delete
             recorder = None
@@ -367,9 +317,7 @@ try:
         except openai.error.AuthenticationError as e:
             print("\nYour OpenAI API key or token is invalid, expired, or revoked.  Please fix this issue and then restart my program.")
             voice("\nYour Open A I A P I key or token is invalid, expired, or revoked.  Please fix this issue and then restart my program.")
-            event.set()
-            GPIO.output(led1_pin, GPIO.LOW)
-            GPIO.output(led2_pin, GPIO.LOW)        
+            event.set()     
             recorder.stop()
             o.delete
             recorder = None
@@ -378,9 +326,7 @@ try:
         except openai.error.ServiceUnavailableError as e:
             print("\nThere is an issue with OpenAI’s servers.  Please try again later.")
             voice("\nThere is an issue with Open A I’s servers.  Please try again later.")
-            event.set()
-            GPIO.output(led1_pin, GPIO.LOW)
-            GPIO.output(led2_pin, GPIO.LOW)        
+            event.set()        
             recorder.stop()
             o.delete
             recorder = None
@@ -389,4 +335,3 @@ try:
 except KeyboardInterrupt:
     print("\nExiting ChatGPT Virtual Assistant")
     o.delete
-    GPIO.cleanup()
