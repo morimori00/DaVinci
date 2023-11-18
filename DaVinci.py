@@ -13,6 +13,7 @@ import sys
 import textwrap
 import threading
 import time
+import wave
 
 from os import environ
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
@@ -133,7 +134,7 @@ def wake_word():
                     frames_per_buffer=porcupine.frame_length)
     
     Detect = True
-
+    print("waiting...")
     while Detect:
         porcupine_pcm = porcupine_audio_stream.read(porcupine.frame_length)
         porcupine_pcm = struct.unpack_from("h" * porcupine.frame_length, porcupine_pcm)
@@ -206,6 +207,20 @@ def detect_silence():
                 cobra.delete()
                 last_voice_time=None
                 break
+                
+def to_file(audio):
+    """ 
+    write_audio_to_file: Write audio to file with wave library.
+    """
+    with wave.open("audio.wav", 'w') as f:
+        f.setparams((1, 2, 16000, len(audio), "NONE", "NONE"))
+        f.writeframes(struct.pack("h" * len(audio), *audio))
+
+def stt():
+    audio_file = open("audio.wav", "rb")
+    text = openai.Audio.transcribe("whisper-1", audio_file, 
+                                          response_format="text")
+    return text
 
 class Recorder(Thread):
     def __init__(self):
@@ -264,7 +279,9 @@ try:
             recorder.start()
             listen()
             detect_silence()
-            transcript, words = o.process(recorder.stop())
+            #transcript, words = o.process(recorder.stop())
+            to_file(recorder.stop())
+            transcript=stt()
             recorder.stop()
             print(transcript)
 #            voice(transcript) # uncomment to have DaVinci repeat what it heard
